@@ -372,7 +372,7 @@ const Game = (() => {
         "Shared leaderboard not enabled — showing this device’s Top 10. To share scores, run the bundled server and open the game with ?shared=1 (see README).";
     } else {
       els.lbMode.textContent =
-        "Leaderboard server offline — showing this device only. Run: python3 server/leaderboard_server.py";
+        "Leaderboard server offline — showing this device only. On a hosted deployment the shared board activates automatically when the /api endpoint is present.";
     }
     els.lbMode.className = "lb-mode lb-offline";
     els.btnClearLeaderboard.hidden = false;

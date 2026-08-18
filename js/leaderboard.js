@@ -13,12 +13,28 @@ const Leaderboard = (() => {
   // Shared scores are OPT-IN so the game makes zero network requests by
   // default (compliance §5.4 / §9.2: no unauthorized transmission). Enable
   // with ?shared=1 in the URL or window.WAREHOUSE_RUSH_SHARED_LB = true
-  // before the game loads. Local Top-10 always works regardless.
-  const SHARED_ENABLED =
+  // before the game loads. On a hosted deployment (served over http(s)) the
+  // same-origin /api is auto-detected: one probe decides whether to use the
+  // shared board. Local Top-10 always works regardless.
+  const EXPLICIT_SHARED =
     (typeof window !== "undefined" && window.WAREHOUSE_RUSH_SHARED_LB === true) ||
     (typeof window !== "undefined" &&
       window.location &&
       /[?&]shared=1(?:&|$)/.test(window.location.search));
+
+  // Explicit opt-out: force the local board even on a hosted deployment.
+  const EXPLICIT_LOCAL =
+    (typeof window !== "undefined" && window.WAREHOUSE_RUSH_SHARED_LB === false) ||
+    (typeof window !== "undefined" &&
+      window.location &&
+      /[?&]shared=0(?:&|$)/.test(window.location.search));
+
+  // Served by a real web server (not file://)? Then the same-origin API is
+  // worth probing — the game enables the shared board only if it answers.
+  const SERVED_OVER_HTTP =
+    typeof window !== "undefined" &&
+    !!window.location &&
+    /^https?:$/.test(window.location.protocol);
 
   let sharedOnline = false;
 
@@ -68,7 +84,15 @@ const Leaderboard = (() => {
   /* ---------- Shared leaderboard API ---------- */
 
   function isSharedEnabled() {
-    return SHARED_ENABLED;
+    // Explicit opt-in wins; explicit opt-out wins; otherwise auto-detect on
+    // hosted deployments (the API probe decides success, not this flag).
+    if (EXPLICIT_SHARED) {
+      return true;
+    }
+    if (EXPLICIT_LOCAL) {
+      return false;
+    }
+    return SERVED_OVER_HTTP;
   }
 
   /* Small retry with backoff: free always-on hosts (Render, some internal
@@ -94,7 +118,7 @@ const Leaderboard = (() => {
   }
 
   async function fetchShared() {
-    if (!SHARED_ENABLED) {
+    if (!isSharedEnabled()) {
       sharedOnline = false;
       return null;
     }
@@ -116,7 +140,7 @@ const Leaderboard = (() => {
   }
 
   async function submitScore(entry) {
-    if (!SHARED_ENABLED) {
+    if (!isSharedEnabled()) {
       return false;
     }
     try {
