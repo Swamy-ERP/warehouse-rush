@@ -150,6 +150,17 @@
             <button type="submit" class="btn btn-primary">Continue</button>
           </form>
         </div>
+        <section class="panel panel-wide welcome-board" aria-label="Global leaderboard">
+          <div class="leaderboard-head">
+            <h3>Global Leaderboard · Top 10</h3>
+          </div>
+          <p id="welcome-lb-mode" class="lb-mode" aria-live="polite"></p>
+          <ol id="welcome-leaderboard-list"></ol>
+          <p class="fine-print">
+            Live across every player on this deployment. Stores only name,
+            score, rounds and a timestamp.
+          </p>
+        </section>
       </section>
 
       <!-- Instructions -->
@@ -323,8 +334,8 @@
             <p id="lb-mode" class="lb-mode" aria-live="polite"></p>
             <ol id="leaderboard-list"></ol>
             <p class="fine-print">
-              Shared scores come from the bundled leaderboard server and store only name,
-              score, rounds and a timestamp. This is not a centralized event leaderboard.
+              Shared scores come from the game’s leaderboard API and store only name,
+              score, rounds and a timestamp.
             </p>
           </section>
         </div>

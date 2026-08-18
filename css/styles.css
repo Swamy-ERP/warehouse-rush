@@ -1315,6 +1315,10 @@ button.floor-cell:hover {
   padding: 0;
 }
 
+.welcome-board {
+  margin-top: 1.1rem;
+}
+
 .leaderboard li {
   display: grid;
   grid-template-columns: 1.8rem minmax(0, 1fr) auto auto;
@@ -1379,6 +1383,28 @@ button.floor-cell:hover {
 
 .lb-mode.lb-online {
   color: #1f7a4d;
+}
+
+.lb-mode.lb-online::before {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-right: 0.35em;
+  border-radius: 50%;
+  background: #1f7a4d;
+  vertical-align: baseline;
+  animation: lb-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes lb-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 .lb-mode.lb-offline {
