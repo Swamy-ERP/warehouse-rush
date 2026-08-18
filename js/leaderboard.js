@@ -71,13 +71,35 @@ const Leaderboard = (() => {
     return SHARED_ENABLED;
   }
 
+  /* Small retry with backoff: free always-on hosts (Render, some internal
+     platforms) can take a second to wake a cold service; one or two retries
+     ride that out so the first fetch after a sleep still works. */
+  async function fetchWithRetry(url, options, attempts) {
+    let lastErr;
+    for (let i = 0; i < attempts; i += 1) {
+      try {
+        const res = await fetch(url, options);
+        if (!res.ok) {
+          throw new Error(String(res.status));
+        }
+        return res;
+      } catch (err) {
+        lastErr = err;
+        if (i < attempts - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 500 * (i + 1)));
+        }
+      }
+    }
+    throw lastErr;
+  }
+
   async function fetchShared() {
     if (!SHARED_ENABLED) {
       sharedOnline = false;
       return null;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/leaderboard`, { cache: "no-store" });
+      const res = await fetchWithRetry(`${API_BASE}/api/leaderboard`, { cache: "no-store" }, 3);
       if (!res.ok) {
         throw new Error(String(res.status));
       }
@@ -98,15 +120,19 @@ const Leaderboard = (() => {
       return false;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/scores`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: entry.name,
-          score: entry.score,
-          rounds: entry.rounds,
-        }),
-      });
+      const res = await fetchWithRetry(
+        `${API_BASE}/api/scores`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: entry.name,
+            score: entry.score,
+            rounds: entry.rounds,
+          }),
+        },
+        3
+      );
       if (!res.ok) {
         throw new Error(String(res.status));
       }

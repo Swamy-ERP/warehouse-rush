@@ -359,6 +359,73 @@ const Route = (() => {
   let cellButtons = {};
   let gridBuilt = false;
 
+  /* ---- Drag-to-draw (touch + mouse): press and drag a continuous line ---- */
+  let dragActive = false;
+  let dragMoved = false;
+  let suppressClick = false;
+
+  function cellFromPoint(x, y) {
+    const el = document.elementFromPoint(x, y);
+    const btn = el && el.closest ? el.closest(".floor-cell") : null;
+    if (!btn || btn.dataset.r === undefined) {
+      return null;
+    }
+    return { r: Number(btn.dataset.r), c: Number(btn.dataset.c) };
+  }
+
+  /* Drag toward the cell under the pointer. Straight-line targets (same row
+     or column) fill intermediate tiles one step at a time so fast swipes
+     don't leave gaps; dragging back over the path truncates like a click. */
+  function dragToward(cell) {
+    const idx = pathIndex(cell.r, cell.c);
+    if (idx >= 0) {
+      return extend(cell.r, cell.c);
+    }
+    const h = head();
+    const dr = cell.r - h.r;
+    const dc = cell.c - h.c;
+    if (dr !== 0 && dc !== 0) {
+      return extend(cell.r, cell.c);
+    }
+    return extend(h.r + Math.sign(dr), h.c + Math.sign(dc));
+  }
+
+  function gridPointerDown(e) {
+    if (e.pointerType === "mouse" && e.button !== 0) {
+      return;
+    }
+    dragActive = true;
+    dragMoved = false;
+  }
+
+  function gridPointerMove(e) {
+    if (!dragActive) {
+      return;
+    }
+    const cell = cellFromPoint(e.clientX, e.clientY);
+    if (!cell) {
+      return;
+    }
+    if (dragToward(cell)) {
+      dragMoved = true;
+      render(rootNode);
+      rootNode.dispatchEvent(new CustomEvent("routechange"));
+    }
+  }
+
+  function gridPointerUp() {
+    dragActive = false;
+    if (dragMoved) {
+      // A drag moved the path, so swallow the click that follows so the last
+      // cell isn't truncated back to itself.
+      suppressClick = true;
+      dragMoved = false;
+      window.setTimeout(() => {
+        suppressClick = false;
+      }, 0);
+    }
+  }
+
   /* Build the board once; later renders only toggle classes in place so the
      grid never visibly rebuilds between moves (the 60s clock keeps running). */
   function buildGrid(root) {
@@ -399,6 +466,21 @@ const Route = (() => {
         root.dispatchEvent(new CustomEvent("routechange"));
       });
     });
+    root.addEventListener("pointerdown", gridPointerDown);
+    root.addEventListener("pointermove", gridPointerMove);
+    root.addEventListener("pointerup", gridPointerUp);
+    root.addEventListener("pointercancel", gridPointerUp);
+    root.addEventListener(
+      "click",
+      (e) => {
+        if (suppressClick) {
+          e.stopPropagation();
+          e.preventDefault();
+          suppressClick = false;
+        }
+      },
+      true
+    );
     const hasExpress = cells.some((cell) => cell.power === "express");
     const hasReveal = cells.some((cell) => cell.power === "reveal");
     const legendExpress = document.getElementById("legend-express");
