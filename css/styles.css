@@ -1315,10 +1315,6 @@ button.floor-cell:hover {
   padding: 0;
 }
 
-.welcome-board {
-  margin-top: 1.1rem;
-}
-
 .leaderboard li {
   display: grid;
   grid-template-columns: 1.8rem minmax(0, 1fr) auto auto;

@@ -379,29 +379,6 @@ const Game = (() => {
     renderLeaderboardListInto(els.leaderboardList, Leaderboard.read());
   }
 
-  /* Welcome screen: the same board, visible before anyone plays, so the
-     global Top-10 greets visitors on arrival. Shared when the API answers,
-     local Top-10 otherwise — zero network on file://. */
-  async function renderWelcomeLeaderboard() {
-    if (!els.welcomeLbList) {
-      return;
-    }
-    const shared = await Leaderboard.fetchShared();
-    if (shared) {
-      els.welcomeLbMode.textContent = "Shared across all players on this server · live";
-      els.welcomeLbMode.className = "lb-mode lb-online";
-      renderLeaderboardListInto(els.welcomeLbList, shared);
-      return;
-    }
-    if (!Leaderboard.isSharedEnabled()) {
-      els.welcomeLbMode.textContent = "No shared server — showing this device’s Top 10.";
-    } else {
-      els.welcomeLbMode.textContent = "Leaderboard server offline — showing this device’s Top 10.";
-    }
-    els.welcomeLbMode.className = "lb-mode lb-offline";
-    renderLeaderboardListInto(els.welcomeLbList, Leaderboard.read());
-  }
-
   function renderLeaderboardListInto(el, list) {
     if (!list.length) {
       el.innerHTML = '<li class="leaderboard-empty">No scores yet. Be the first!</li>';
@@ -470,8 +447,6 @@ const Game = (() => {
     els.leaderboardList = $("leaderboard-list");
     els.lbMode = $("lb-mode");
     els.btnClearLeaderboard = $("btn-clear-leaderboard");
-    els.welcomeLbList = $("welcome-leaderboard-list");
-    els.welcomeLbMode = $("welcome-lb-mode");
   }
 
   function showInstructions(fromPlay) {
@@ -599,7 +574,6 @@ const Game = (() => {
     });
     setTimeDisplay(60);
     setHud();
-    renderWelcomeLeaderboard();
     els.playerName.focus();
   }
 
