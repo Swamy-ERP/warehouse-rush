@@ -11,10 +11,22 @@ module.exports = async function handler(req, res) {
   const entries = await load();
   const body = { entries };
   if (req.headers["x-wr-debug"]) {
+    const ep = (() => {
+      try {
+        const store = require("../lib/store");
+        const e = store.debugEndpoint();
+        return e ? { host: e.url.replace(/^https?:\/\//, "").split("/")[0], hasToken: !!e.token } : null;
+      } catch (err) {
+        return { error: err.message };
+      }
+    })();
     body.debug = {
-      kvUrl: process.env.KV_REST_API_URL ? String(process.env.KV_REST_API_URL).slice(0, 60) : null,
+      kvUrl: process.env.KV_REST_API_URL ? "set" : null,
       kvToken: process.env.KV_REST_API_TOKEN ? "set" : null,
-      upstashUrl: process.env.UPSTASH_REDIS_REST_URL ? String(process.env.UPSTASH_REDIS_REST_URL).slice(0, 60) : null,
+      redisUrl: process.env.REDIS_URL ? "set" : null,
+      redisRestUrl: process.env.REDIS_REST_API_URL ? "set" : null,
+      upstashUrl: process.env.UPSTASH_REDIS_REST_URL ? "set" : null,
+      endpoint: ep,
     };
   }
   return res.status(200).json(body);
